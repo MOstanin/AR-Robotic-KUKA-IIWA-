@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: ae156f41cfc41f046ab42427fd4a7a1b
+timeCreated: 1509435378
+licenseType: Free
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - link1: {instanceID: 0}
+  - link2: {instanceID: 0}
+  - link3: {instanceID: 0}
+  - link4: {instanceID: 0}
+  - link5: {instanceID: 0}
+  - link6: {instanceID: 0}
+  - link7: {instanceID: 0}
+  - ball: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
