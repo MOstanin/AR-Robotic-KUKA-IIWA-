@@ -22,10 +22,11 @@ public class KukaController : MonoBehaviour
     public GameObject link7;
 
     public GameObject ball;
-
+    LinkedList<GameObject> ballsList;
     //float[] q_goal;
 
     Matrix<float> ball_matrix;
+
     float[] q;
 
     // Use this for initialization
@@ -41,58 +42,51 @@ public class KukaController : MonoBehaviour
         link7 = GameObject.Find("link_7");
 
         ball = GameObject.Find("ball");
+        ballsList = new LinkedList<GameObject>();
+        ballsList.AddFirst(ball);
 
         //float[] q_goal = readKUKAState();
         q = ReadKUKAState();
-        GoToBall();
+        CreateMatrix();
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        //link1.transform.Rotate(new Vector3(0,10*Time.deltaTime,0));
-        //link2.transform.Rotate(new Vector3(0,0,10*Time.deltaTime));
         
-
         Matrix<float> end_effector_matrix = ForwardKin(q);
         
         float[] error = CalcErorr(ball_matrix, end_effector_matrix);
-
-
+        
         float diff_r = error[0]* error[0] + error[1] * error[1] + error[2] * error[2];
         float diif_o = error[3] * error[3] + error[4] * error[4] + error[5] * error[5];
-
-
+        
         Vector<float> del_q = Vector<float>.Build.DenseOfArray(new float[] { 0, 0, 0, 0, 0, 0, 0 });
         float[] del_q2 = new float[] { 0, 0, 0, 0, 0, 0, 0 };
 
-        if (diff_r  > 0.1F || diif_o > 0.02F)
+        if (diff_r  > 1 || diif_o > 0.02F)
         {
-
-            //Matrix<float> jac = iiwaJacobian(q);
-            //Matrix<float> jacT = jac.Transpose();
-            //Matrix<float> jacINV = jac * jacT;
-            //Matrix<float> jac2 = jacT.Multiply(jacINV.Inverse());
-            //Matrix<float> jac3 = jac.PseudoInverse();
-            //Vector<float> errorVec = Vector<float>.Build.DenseOfArray(error);
-            //del_q = jac3.Multiply(errorVec);
-
-            del_q2=moveSNS(q, error);
+            del_q2=MoveSNS(q, error);
 
             for (int i = 0; i < 7; i++)
             {
                 q[i] = q[i] + del_q2[i];
             }
-
             SendKUKAState(q);
-            
-            
+        }
+        else
+        {
+            if (ballsList.Find(ball).Next != null)
+            {
+                ball = ballsList.Find(ball).Next.Value;
+                CreateMatrix();
+            }
         }
         
     }
 
-    private float[] moveSNS(float[] q_current, float[] error)
+    private float[] MoveSNS(float[] q_current, float[] error)
     {
         /*
         MWNumericArray q0 = new MWNumericArray(q_current);
@@ -254,7 +248,7 @@ public class KukaController : MonoBehaviour
     }
 
 
-    public void GoToBall()
+    public void CreateMatrix()
     {
         
         Vector3 goal_pos = ball.transform.position * 1000 / 5;
@@ -266,6 +260,33 @@ public class KukaController : MonoBehaviour
 
         ball_matrix = creareMatrixT(goal_pos, goal_orin);
         
+    }
+    public void CreateMatrix(GameObject ball)
+    {
+
+        Vector3 goal_pos = ball.transform.position * 1000 / 5;
+
+        float A = ball.transform.localEulerAngles.x * Mathf.PI / 180;
+        float B = ball.transform.localEulerAngles.y * Mathf.PI / 180;
+        float C = ball.transform.localEulerAngles.z * Mathf.PI / 180;
+        Vector3 goal_orin = new Vector3(A, B, C);
+
+        ball_matrix = creareMatrixT(goal_pos, goal_orin);
+
+    }
+
+
+    public void CreateBallSecuance()
+    {
+        ballsList.Clear();
+        ball = GameObject.Find("ball");
+        CreateMatrix();
+        ballsList.AddFirst(ball);
+        int i = 1;
+        while (GameObject.Find("ball" + i.ToString()) != null){
+            ballsList.AddLast(GameObject.Find("ball" + i.ToString()));
+            i = i + 1;
+        }   
     }
 
     private Matrix<float> iiwaJacobian(float[] q)
