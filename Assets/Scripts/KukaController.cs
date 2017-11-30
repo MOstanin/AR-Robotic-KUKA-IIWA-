@@ -43,7 +43,7 @@ public class KukaController : MonoBehaviour
         ball = GameObject.Find("ball");
 
         //float[] q_goal = readKUKAState();
-        q = readKUKAState();
+        q = ReadKUKAState();
         GoToBall();
 
     }
@@ -55,7 +55,7 @@ public class KukaController : MonoBehaviour
         //link2.transform.Rotate(new Vector3(0,0,10*Time.deltaTime));
         
 
-        Matrix<float> end_effector_matrix = forwardKin(q);
+        Matrix<float> end_effector_matrix = ForwardKin(q);
         
         float[] error = CalcErorr(ball_matrix, end_effector_matrix);
 
@@ -85,7 +85,7 @@ public class KukaController : MonoBehaviour
                 q[i] = q[i] + del_q2[i];
             }
 
-            sendKUKAState(q);
+            SendKUKAState(q);
             
             
         }
@@ -130,15 +130,17 @@ public class KukaController : MonoBehaviour
         Vector<float> qSNS;
         Matrix<float> jac = iiwaJacobian(q_current);
 
+        Vector<float> errorSNS = Vector<float>.Build.DenseOfArray(error);
+
         do
         {
             lim_exceeded = false;
 
-            
-            Matrix<float> JW = jac.Multiply(W);
-            Matrix < float > jac3 = JW.PseudoInverse();
-            Vector<float> errorSNS = Vector<float>.Build.DenseOfArray(error);
 
+            Matrix<float> JW = jac.Multiply(W);
+            Matrix<float> jac3 = JW.PseudoInverse();
+
+            
             qSNS = qN + jac3 * (s * errorSNS - jac * qN);
             //qSNS = qN + jac3.Multiply(s * errorSNS - jac.Multiply(qN));
             
@@ -186,7 +188,7 @@ public class KukaController : MonoBehaviour
 
                 //find
                 //smax_=min(Smax);
-                //smin_ = max(Smin);
+                //smin_ =max(Smin);
 
                 float s_min = Smin[0];
                 float s_max = Smax[0];
@@ -221,18 +223,24 @@ public class KukaController : MonoBehaviour
                     if (qN[i] < Qmin[i]) { qN[i] = Qmin[i]; }
                 }
                 JW = jac.Multiply(W);
-                if (JW.Rank() < 6)
+                int r = JW.Rank();
+                if (r < 6)
                 {
                     s = s2;
                     W = W2;
                     qN = qN2;
                     lim_exceeded = false;
 
-                    JW = jac.Multiply(W);
-                    jac3 = JW.PseudoInverse();
+                    //JW = jac.Multiply(W);
+                    //Matrix<float> jac2  = JW.PseudoInverse();
 
-                    qSNS = qN + jac3.Multiply(s * errorSNS - jac.Multiply(qN));
-                    //qSNS = jac3.Multiply(s * errorSNS);
+                    //work in general case.
+
+                    qSNS = qN + jac3 * (s * errorSNS - jac * qN);
+                    //qSNS = qN + jac2 * (s * errorSNS - jac * qN);
+
+                    
+                   
 
                 }
 
@@ -263,14 +271,14 @@ public class KukaController : MonoBehaviour
     private Matrix<float> iiwaJacobian(float[] q)
     {
 
-        Matrix<float> A1 = calcMatrix(360, q[0], 0, Mathf.PI / 2);
-        Matrix<float> A2 = calcMatrix(0, q[1], 0, -Mathf.PI / 2);
-        Matrix<float> A3 = calcMatrix(420, q[2], 0, Mathf.PI / 2);
-        Matrix<float> A4 = calcMatrix(0, q[3], 0, -Mathf.PI / 2);
-        Matrix<float> A5 = calcMatrix(400, q[4], 0, Mathf.PI / 2);
-        Matrix<float> A6 = calcMatrix(0, q[5], 0, -Mathf.PI / 2);
+        Matrix<float> A1 = CalcMatrix(360, q[0], 0, Mathf.PI / 2);
+        Matrix<float> A2 = CalcMatrix(0, q[1], 0, -Mathf.PI / 2);
+        Matrix<float> A3 = CalcMatrix(420, q[2], 0, Mathf.PI / 2);
+        Matrix<float> A4 = CalcMatrix(0, q[3], 0, -Mathf.PI / 2);
+        Matrix<float> A5 = CalcMatrix(400, q[4], 0, Mathf.PI / 2);
+        Matrix<float> A6 = CalcMatrix(0, q[5], 0, -Mathf.PI / 2);
         //Matrix<float> A7 = calcMatrix(0, q[6], 0, 0);
-        Matrix<float> A7 = calcMatrix(130, q[6], 0, 0);
+        Matrix<float> A7 = CalcMatrix(130, q[6], 0, 0);
 
         Matrix<float> T1 = A1;
         Matrix<float> T2 = A1.Multiply(A2);
@@ -307,17 +315,17 @@ public class KukaController : MonoBehaviour
         });
     }
 
-    public static Matrix<float> forwardKin(float[] q)
+    public static Matrix<float> ForwardKin(float[] q)
     {
-        Matrix<float> A0 = calcMatrix(0, Mathf.PI, 0, 0);
-        Matrix<float> A1 = calcMatrix(360, q[0], 0, Mathf.PI / 2);
-        Matrix<float> A2 = calcMatrix(0,   q[1], 0, -Mathf.PI / 2);
-        Matrix<float> A3 = calcMatrix(420, q[2], 0, Mathf.PI / 2);
-        Matrix<float> A4 = calcMatrix(0,   q[3], 0, -Mathf.PI / 2);
-        Matrix<float> A5 = calcMatrix(400, q[4], 0, Mathf.PI / 2);
-        Matrix<float> A6 = calcMatrix(0,   q[5], 0, -Mathf.PI / 2);
+        Matrix<float> A0 = CalcMatrix(0, Mathf.PI, 0, 0);
+        Matrix<float> A1 = CalcMatrix(360, q[0], 0, Mathf.PI / 2);
+        Matrix<float> A2 = CalcMatrix(0,   q[1], 0, -Mathf.PI / 2);
+        Matrix<float> A3 = CalcMatrix(420, q[2], 0, Mathf.PI / 2);
+        Matrix<float> A4 = CalcMatrix(0,   q[3], 0, -Mathf.PI / 2);
+        Matrix<float> A5 = CalcMatrix(400, q[4], 0, Mathf.PI / 2);
+        Matrix<float> A6 = CalcMatrix(0,   q[5], 0, -Mathf.PI / 2);
         //Matrix<float> A7 = calcMatrix(0, q[6], 0, 0);
-        Matrix<float> A7 = calcMatrix(130, q[6], 0, 0);
+        Matrix<float> A7 = CalcMatrix(130, q[6], 0, 0);
 
         Matrix<float> T7 = A1 * A2 * A3 * A4 * A5 * A6 * A7;
 
@@ -358,14 +366,14 @@ public class KukaController : MonoBehaviour
         float d3 = t1[2] - t2[2];
 
 
-        err[3] = (R[0, 0] * d2 + R[0, 1] * d1 + R[0, 2] * d3);
-        err[4] = (R[1, 0] * d2 + R[1, 1] * d1 + R[1, 2] * d3);
-        err[5] = (R[2, 0] * d2 + R[2, 1] * d1 + R[2, 2] * d3);
+        err[3] = (R[0, 0] * d2 + R[0, 1] * d1 + R[0, 2] * d3) * 2;
+        err[4] = (R[1, 0] * d2 + R[1, 1] * d1 + R[1, 2] * d3) * 2;
+        err[5] = (R[2, 0] * d2 + R[2, 1] * d1 + R[2, 2] * d3) * 2;
 
         return err;
     }
 
-    private float[] readKUKAState()
+    private float[] ReadKUKAState()
     {
         float[] qr = new float[7];
 
@@ -457,7 +465,7 @@ public class KukaController : MonoBehaviour
         return T;
     }
 
-    private void sendKUKAState(float[] q)
+    private void SendKUKAState(float[] q)
     {
         link1.transform.localRotation = Quaternion.Euler(new Vector3(0, q[0] * 180 / Mathf.PI, 0));
         link2.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, q[1] * 180 / Mathf.PI));
@@ -470,18 +478,22 @@ public class KukaController : MonoBehaviour
 
 
 
-    private static Matrix<float> calcMatrix(float d, float q, float a, float alph)
+    private static Matrix<float> CalcMatrix(float d, float q, float a, float alph)
     {
         return Matrix<float>.Build.DenseOfArray(new float[,]
             {
-                { Mathf.Cos(q), -Mathf.Cos(alph)*Mathf.Sin(q),  Mathf.Sin(alph)*Mathf.Sin(q), a*Mathf.Cos(q) },
-                { Mathf.Sin(q),  Mathf.Cos(alph)*Mathf.Cos(q), -Mathf.Sin(alph)*Mathf.Cos(q), a*Mathf.Sin(q)},
-                { 0,             Mathf.Sin(alph),               Mathf.Cos(alph),              d},
-                { 0,             0,                             0,                            1}
+                { MyRround(Mathf.Cos(q)), MyRround(-Mathf.Cos(alph)*Mathf.Sin(q)),  MyRround(Mathf.Sin(alph)*Mathf.Sin(q)), MyRround(a*Mathf.Cos(q)) },
+                { MyRround(Mathf.Sin(q)),  MyRround(Mathf.Cos(alph)*Mathf.Cos(q)), MyRround(-Mathf.Sin(alph)*Mathf.Cos(q)), MyRround(a*Mathf.Sin(q))},
+                { 0,                                    MyRround(Mathf.Sin(alph)),               MyRround(Mathf.Cos(alph)),              MyRround(d)},
+                { 0,                                                            0,                             0,                            1}
             });
-
     }
 
+    private static float MyRround(float n)
+    {   
+        return (Mathf.Round(n*1000))/ 1000;
+
+    }
 
 
     /*
