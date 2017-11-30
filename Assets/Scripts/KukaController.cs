@@ -97,13 +97,11 @@ public class KukaController : MonoBehaviour
 
         MWNumericArray ans = test.inv_kin_iiwa_del_qSNS(7, q0, ErrorMATLAB, qN);
         */
-
-        float[] speed= new float[] { 85F, 85F, 100F, 75F, 130F, 135F, 135F };
+        float k = 0.01F;
+        float[] speed= new float[] { 85 * k, 85 * k, 100 * k, 75 * k, 130 * k, 135 * k, 135 * k };
         float[] Qmax = new float[] { 170, 130, 170, 130, 170, 130, 175 };
         float[] Qmin = new float[] { -170, -130, -170, -130, -170, -130, -175};
         
-        //float[] Smax = new float[7];
-        //float[] Smin = new float[7];
 
         for (int i = 0; i < 7; i++)
         {
@@ -131,7 +129,7 @@ public class KukaController : MonoBehaviour
             lim_exceeded = false;
 
 
-            Matrix<float> JW = jac.Multiply(W);
+            Matrix<float> JW = jac*W;
             Matrix<float> jac3 = JW.PseudoInverse();
 
             
@@ -205,8 +203,8 @@ public class KukaController : MonoBehaviour
                 if (task_scale >= s2)
                 {
                     s2 = task_scale;
-                    W2 = W;
-                    qN2 = qN;
+                    W2 = W.Clone();
+                    qN2 = qN.Clone();
                 }
 
                 W[j, j] = 0;
@@ -216,26 +214,19 @@ public class KukaController : MonoBehaviour
                     if (qN[i] > Qmax[i]) { qN[i] = Qmax[i]; }
                     if (qN[i] < Qmin[i]) { qN[i] = Qmin[i]; }
                 }
-                JW = jac.Multiply(W);
+                JW = jac * W;
                 int r = JW.Rank();
                 if (r < 6)
                 {
                     s = s2;
-                    W = W2;
-                    qN = qN2;
+                    W = W2.Clone();
+                    qN = qN2.Clone();
                     lim_exceeded = false;
 
-                    //JW = jac.Multiply(W);
-                    //Matrix<float> jac2  = JW.PseudoInverse();
-
-                    //work in general case.
-
-                    qSNS = qN + jac3 * (s * errorSNS - jac * qN);
-                    //qSNS = qN + jac2 * (s * errorSNS - jac * qN);
-
+                    JW = jac * W;
+                    Matrix<float> jac2  = JW.PseudoInverse();
                     
-                   
-
+                    qSNS = qN + jac2 * (s * errorSNS - jac * qN);
                 }
 
             }
@@ -243,7 +234,7 @@ public class KukaController : MonoBehaviour
         } while (lim_exceeded);
 
       
-        return (qSNS*0.05F).AsArray();
+        return qSNS.AsArray();
 
     }
 
