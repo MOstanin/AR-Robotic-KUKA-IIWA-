@@ -28,7 +28,7 @@ public class KukaController : MonoBehaviour
     Matrix<float> ball_matrix;
 
     float[] q;
-
+    float scale;
     // Use this for initialization
     void Start()
     {
@@ -45,10 +45,11 @@ public class KukaController : MonoBehaviour
         ballsList = new LinkedList<GameObject>();
         ballsList.AddFirst(ball);
 
+
+        scale = GameObject.Find("ImageTarget").transform.localScale.x;
         //float[] q_goal = readKUKAState();
         q = ReadKUKAState();
         CreateMatrix();
-
     }
 
     // Update is called once per frame
@@ -105,8 +106,8 @@ public class KukaController : MonoBehaviour
 
         for (int i = 0; i < 7; i++)
         {
-            Qmax[i] = Mathf.Min((Qmax[i] * Mathf.PI / 180 - q_current[i]), speed[i] * Mathf.PI / 180);
-            Qmin[i] = Mathf.Max((Qmin[i] * Mathf.PI / 180 - q_current[i]), -speed[i] * Mathf.PI / 180);
+            Qmax[i] = Mathf.Min((Qmax[i] * Mathf.PI / 180 - q_current[i])/ Time.deltaTime, speed[i] * Mathf.PI / 180);
+            Qmin[i] = Mathf.Max((Qmin[i] * Mathf.PI / 180 - q_current[i])/ Time.deltaTime, -speed[i] * Mathf.PI / 180);
         }
 
         Matrix<float> W = Matrix<float>.Build.DenseDiagonal(7, 1);
@@ -120,7 +121,7 @@ public class KukaController : MonoBehaviour
         float task_scale;
 
         Vector<float> qSNS;
-        Matrix<float> jac = iiwaJacobian(q_current);
+        Matrix<float> jac = IIWAjacobian(q_current);
 
         Vector<float> errorSNS = Vector<float>.Build.DenseOfArray(error);
 
@@ -209,11 +210,10 @@ public class KukaController : MonoBehaviour
 
                 W[j, j] = 0;
 
-                for (int i = 0; i < 7; i++)
-                {
-                    if (qN[i] > Qmax[i]) { qN[i] = Qmax[i]; }
-                    if (qN[i] < Qmin[i]) { qN[i] = Qmin[i]; }
-                }
+                
+                if (qSNS[j] > Qmax[j]) { qN[j] = Qmax[j]; }
+                if (qSNS[j] < Qmin[j]) { qN[j] = Qmin[j]; }
+                
                 JW = jac * W;
                 int r = JW.Rank();
                 if (r < 6)
@@ -242,7 +242,7 @@ public class KukaController : MonoBehaviour
     public void CreateMatrix()
     {
         
-        Vector3 goal_pos = ball.transform.position * 1000 / 5;
+        Vector3 goal_pos = ball.transform.position * 1000 / scale;
 
         float A = ball.transform.localEulerAngles.x * Mathf.PI / 180;
         float B = ball.transform.localEulerAngles.y * Mathf.PI / 180;
@@ -280,7 +280,7 @@ public class KukaController : MonoBehaviour
         }   
     }
 
-    private Matrix<float> iiwaJacobian(float[] q)
+    private Matrix<float> IIWAjacobian(float[] q)
     {
 
         Matrix<float> A1 = CalcMatrix(360, q[0], 0, Mathf.PI / 2);
