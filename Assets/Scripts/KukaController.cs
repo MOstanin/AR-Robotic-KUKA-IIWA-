@@ -48,7 +48,7 @@ public class KukaController : MonoBehaviour
 
         scale = GameObject.Find("ImageTarget").transform.localScale.x;
         //float[] q_goal = readKUKAState();
-        q = ReadKUKAState();
+        q = ReadState();
         CreateMatrix();
     }
 
@@ -74,7 +74,7 @@ public class KukaController : MonoBehaviour
             {
                 q[i] = q[i] + del_q2[i];
             }
-            SendKUKAState(q);
+            SendState(q);
         }
         else
         {
@@ -252,19 +252,6 @@ public class KukaController : MonoBehaviour
         ball_matrix = creareMatrixT(goal_pos, goal_orin);
         
     }
-    public void CreateMatrix(GameObject ball)
-    {
-
-        Vector3 goal_pos = ball.transform.position * 1000 / 5;
-
-        float A = ball.transform.localEulerAngles.x * Mathf.PI / 180;
-        float B = ball.transform.localEulerAngles.y * Mathf.PI / 180;
-        float C = ball.transform.localEulerAngles.z * Mathf.PI / 180;
-        Vector3 goal_orin = new Vector3(A, B, C);
-
-        ball_matrix = creareMatrixT(goal_pos, goal_orin);
-
-    }
 
 
     public void CreateBallSecuance()
@@ -283,14 +270,14 @@ public class KukaController : MonoBehaviour
     private Matrix<float> IIWAjacobian(float[] q)
     {
 
-        Matrix<float> A1 = CalcMatrix(360, q[0], 0, Mathf.PI / 2);
-        Matrix<float> A2 = CalcMatrix(0, q[1], 0, -Mathf.PI / 2);
-        Matrix<float> A3 = CalcMatrix(420, q[2], 0, Mathf.PI / 2);
-        Matrix<float> A4 = CalcMatrix(0, q[3], 0, -Mathf.PI / 2);
-        Matrix<float> A5 = CalcMatrix(400, q[4], 0, Mathf.PI / 2);
-        Matrix<float> A6 = CalcMatrix(0, q[5], 0, -Mathf.PI / 2);
+        Matrix<float> A1 = CalcMatrix2(360, q[0], 0, Mathf.PI / 2);
+        Matrix<float> A2 = CalcMatrix2(0, q[1], 0, -Mathf.PI / 2);
+        Matrix<float> A3 = CalcMatrix2(420, q[2], 0, Mathf.PI / 2);
+        Matrix<float> A4 = CalcMatrix2(0, q[3], 0, -Mathf.PI / 2);
+        Matrix<float> A5 = CalcMatrix2(400, q[4], 0, Mathf.PI / 2);
+        Matrix<float> A6 = CalcMatrix2(0, q[5], 0, -Mathf.PI / 2);
         //Matrix<float> A7 = calcMatrix(0, q[6], 0, 0);
-        Matrix<float> A7 = CalcMatrix(130, q[6], 0, 0);
+        Matrix<float> A7 = CalcMatrix2(130, q[6], 0, 0);
 
         Matrix<float> T1 = A1;
         Matrix<float> T2 = A1.Multiply(A2);
@@ -329,15 +316,15 @@ public class KukaController : MonoBehaviour
 
     public static Matrix<float> ForwardKin(float[] q)
     {
-        Matrix<float> A0 = CalcMatrix(0, Mathf.PI, 0, 0);
-        Matrix<float> A1 = CalcMatrix(360, q[0], 0, Mathf.PI / 2);
-        Matrix<float> A2 = CalcMatrix(0,   q[1], 0, -Mathf.PI / 2);
-        Matrix<float> A3 = CalcMatrix(420, q[2], 0, Mathf.PI / 2);
-        Matrix<float> A4 = CalcMatrix(0,   q[3], 0, -Mathf.PI / 2);
-        Matrix<float> A5 = CalcMatrix(400, q[4], 0, Mathf.PI / 2);
-        Matrix<float> A6 = CalcMatrix(0,   q[5], 0, -Mathf.PI / 2);
+        Matrix<float> A0 = CalcMatrix2(0, Mathf.PI, 0, 0);
+        Matrix<float> A1 = CalcMatrix2(360, q[0], 0, Mathf.PI / 2);
+        Matrix<float> A2 = CalcMatrix2(0,   q[1], 0, -Mathf.PI / 2);
+        Matrix<float> A3 = CalcMatrix2(420, q[2], 0, Mathf.PI / 2);
+        Matrix<float> A4 = CalcMatrix2(0,   q[3], 0, -Mathf.PI / 2);
+        Matrix<float> A5 = CalcMatrix2(400, q[4], 0, Mathf.PI / 2);
+        Matrix<float> A6 = CalcMatrix2(0,   q[5], 0, -Mathf.PI / 2);
         //Matrix<float> A7 = calcMatrix(0, q[6], 0, 0);
-        Matrix<float> A7 = CalcMatrix(130, q[6], 0, 0);
+        Matrix<float> A7 = CalcMatrix2(130, q[6], 0, 0);
 
         Matrix<float> T7 = A1 * A2 * A3 * A4 * A5 * A6 * A7;
 
@@ -385,7 +372,7 @@ public class KukaController : MonoBehaviour
         return err;
     }
 
-    private float[] ReadKUKAState()
+    private float[] ReadState()
     {
         float[] qr = new float[7];
 
@@ -477,7 +464,7 @@ public class KukaController : MonoBehaviour
         return T;
     }
 
-    private void SendKUKAState(float[] q)
+    private void SendState(float[] q)
     {
         link1.transform.localRotation = Quaternion.Euler(new Vector3(0, q[0] * 180 / Mathf.PI, 0));
         link2.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, q[1] * 180 / Mathf.PI));
@@ -489,8 +476,7 @@ public class KukaController : MonoBehaviour
     }
 
 
-
-    private static Matrix<float> CalcMatrix(float d, float q, float a, float alph)
+    public static Matrix<float> CalcMatrix2(float d, float q, float a, float alph)
     {
         return Matrix<float>.Build.DenseOfArray(new float[,]
             {
